@@ -1,0 +1,64 @@
+---
+
+- name: Test distribution
+  assert:
+    that: ansible_os_family == "RedHat"
+
+- name: Configure additional repos in /etc/yum.repos.d/
+  template:
+    src: yum_repo.j2
+    dest: "/etc/yum.repos.d/{{ item.key }}.repo"
+  with_dict: yumrepo_repos
+  when: yumrepo_repos.keys() | length > 0
+  notify:
+    - Delete unmanaged repos
+
+- name: Create temporal directory
+  file:
+    path: "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}"
+    state: directory
+  changed_when: False
+
+- name: Create fragments for repos to be ignored
+  lineinfile:
+    line: "{{ item | replace('.repo', '') }}"
+    dest: "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}/{{ item }}"
+    create: yes
+    state: present
+  with_items: yumrepo_ignore_repos
+  changed_when: False
+  when: yumrepo_ignore_repos | length > 0
+
+- name: Create fragment files
+  lineinfile:
+    line: "{{ item.key }}"
+    dest: "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}/{{ item.key }}"
+    create: yes
+    state: present
+  with_dict: yumrepo_repos
+  changed_when: False
+  when: yumrepo_repos.keys() | length > 0
+
+- name: Touch the .processed file
+  shell: touch /tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}/.processed
+  changed_when: False
+  when: not yumrepo_finish
+
+- name: Check if the the .processed file exists
+  stat:
+    path: /tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}/.processed
+  register: processed
+
+- name: Create managed file
+  assemble:
+    src: "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}"
+    dest: "/etc/yum.repos.d/.managed"
+    regexp: '^[^\.].*'
+  when: processed.stat.exists and yumrepo_finish
+  notify:
+    - Delete unmanaged repos
+
+- name: Delete the fragment directory
+  shell: rm -fr "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}"
+  changed_when: False
+  when: yumrepo_finish

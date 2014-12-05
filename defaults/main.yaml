@@ -1,0 +1,23 @@
+---
+
+# Repository configuration
+yumrepo_repos: {}
+# Example
+#yumrepo_repos:
+#  # ID of the repository
+#  test:
+#    # Additional parameters
+#    name: Testing repo
+#    baseurl: http://myserver/
+#    enabled: 1
+#    gpgcheck: 0
+#    metadata_expire: 1
+
+# Default list of repos files which won't be deleted during the clearing process
+yumrepo_ignore_repos: []
+# Example:
+#yumrepo_ignore_repos:
+#  - CentOS-Base
+
+# To cleanup the temp directory and generate the .managed file
+yumrepo_finish: false

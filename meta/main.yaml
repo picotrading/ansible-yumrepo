@@ -1,0 +1,12 @@
+---
+
+galaxy_info:
+  author: yumrepo
+  description: Role which helps to manage YUM repositories
+  license: MIT
+  min_ansible_version: 1.7
+  platforms:
+    - name: Redhat
+  categories:
+    - system
+dependencies: []

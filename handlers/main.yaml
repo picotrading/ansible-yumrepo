@@ -1,0 +1,16 @@
+---
+
+- name: Delete unmanaged repos
+  shell: >
+    for F in $(ls -1 *.repo); do
+      FOUND=0;
+      for M in $(cat .managed); do
+        [ "${M}.repo" == "$F" ] && FOUND=1;
+      done;
+      [ $FOUND == 0 ] && rm -f $F;
+    done;
+    true;
+  args:
+    chdir: /etc/yum.repos.d
+    executable: /bin/bash
+  changed_when: False

@@ -80,6 +80,38 @@ dependencies:
   #  yumrepo_finish: true
 ```
 
+The `yumrepo_finish` variable can be set in a final play placed at the end of the
+playbook. This requires to share any global variables used by the `yumrepo` role
+(e.g. `yumrepo_repos_ignore`) across all plays with `vars_files`.
+
+```
+---
+
+- hosts: myhost1
+  vars_file: vars/shared.yaml
+  roles:
+    - role: yumrepo
+      yumrepo_repos:
+        appreponame1:
+          name: App repo 1
+          baseurl: http://myserver1
+
+- hosts: myhost2
+  vars_file: vars/shared.yaml
+  roles:
+    - role: yumrepo
+      yumrepo_repos:
+        appreponame2:
+          name: App repo 2
+          baseurl: http://myserver2
+
+- hosts: all
+  name: Final play
+  roles:
+    - role: yumrepo
+      yumrepo_finish: yes
+```
+
 This role deletes all unmanaged repos at the end of the play. So if a repo
 definition is removed from the play (`roles`) or from the role (`dependencies`),
 it will remove the repo file at the end of the play. All depends on the content

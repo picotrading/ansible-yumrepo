@@ -4,10 +4,15 @@
   assert:
     that: ansible_os_family == "RedHat"
 
+- name: Create playbook-unique fact
+  set_fact:
+    yumrepo_unique: "{{ ansible_date_time.iso8601_micro }}"
+  when: yumrepo_unique is not defined
+
 - name: Configure additional repos in /etc/yum.repos.d/
   template:
     src: yum_repo.j2
-    dest: "/etc/yum.repos.d/{{ item.key }}.repo"
+    dest: /etc/yum.repos.d/{{ item.key }}.repo
   with_dict: yumrepo_repos
   when: yumrepo_repos.keys() | length > 0
   notify:
@@ -15,14 +20,14 @@
 
 - name: Create temporal directory
   file:
-    path: "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}"
+    path: /tmp/ansible.yumrepo.{{ yumrepo_unique }}
     state: directory
   changed_when: False
 
 - name: Create fragments for repos to be ignored
   lineinfile:
-    line: "{{ item | replace('.repo', '') }}"
-    dest: "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}/{{ item }}"
+    line: "{{ item }}"
+    dest: /tmp/ansible.yumrepo.{{ yumrepo_unique }}/{{ item }}
     create: yes
     state: present
   with_items: yumrepo_ignore_repos
@@ -31,8 +36,8 @@
 
 - name: Create fragment files
   lineinfile:
-    line: "{{ item.key }}"
-    dest: "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}/{{ item.key }}"
+    line: "{{ item.key }}.repo"
+    dest: /tmp/ansible.yumrepo.{{ yumrepo_unique }}/{{ item.key }}
     create: yes
     state: present
   with_dict: yumrepo_repos
@@ -40,25 +45,25 @@
   when: yumrepo_repos.keys() | length > 0
 
 - name: Touch the .processed file
-  shell: touch /tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}/.processed
+  shell: touch /tmp/ansible.yumrepo.{{ yumrepo_unique }}/.processed
   changed_when: False
   when: not yumrepo_finish
 
 - name: Check if the the .processed file exists
   stat:
-    path: /tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}/.processed
+    path: /tmp/ansible.yumrepo.{{ yumrepo_unique }}/.processed
   register: processed
 
 - name: Create managed file
   assemble:
-    src: "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}"
-    dest: "/etc/yum.repos.d/.managed"
+    src: /tmp/ansible.yumrepo.{{ yumrepo_unique }}
+    dest: /etc/yum.repos.d/.managed
     regexp: '^[^\.].*'
   when: processed.stat.exists and yumrepo_finish
   notify:
     - Delete unmanaged repos
 
 - name: Delete the fragment directory
-  shell: rm -fr "/tmp/ansible.yumrepo.{{ ansible_date_time.iso8601_micro }}"
+  shell: rm -fr "/tmp/ansible.yumrepo.{{ yumrepo_unique }}x"
   changed_when: False
   when: yumrepo_finish

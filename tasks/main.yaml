@@ -23,6 +23,7 @@
     path: /tmp/ansible.yumrepo.{{ yumrepo_unique }}
     state: directory
   changed_when: False
+  when: yumrepo_manage
 
 - name: Create fragments for repos to be ignored
   lineinfile:
@@ -32,7 +33,9 @@
     state: present
   with_items: yumrepo_ignore_repos
   changed_when: False
-  when: yumrepo_ignore_repos | length > 0
+  when: >
+    yumrepo_manage and
+    yumrepo_ignore_repos | length > 0
 
 - name: Create fragment files
   lineinfile:
@@ -42,28 +45,53 @@
     state: present
   with_dict: yumrepo_repos
   changed_when: False
-  when: yumrepo_repos.keys() | length > 0
+  when: >
+    yumrepo_manage and
+    yumrepo_repos.keys() | length > 0
 
 - name: Touch the .processed file
   shell: touch /tmp/ansible.yumrepo.{{ yumrepo_unique }}/.processed
   changed_when: False
-  when: not yumrepo_finish
+  when: >
+    yumrepo_manage and
+    not yumrepo_finish
 
 - name: Check if the the .processed file exists
   stat:
     path: /tmp/ansible.yumrepo.{{ yumrepo_unique }}/.processed
   register: processed
+  when: yumrepo_manage
 
 - name: Create managed file
   assemble:
     src: /tmp/ansible.yumrepo.{{ yumrepo_unique }}
     dest: /etc/yum.repos.d/.managed
     regexp: '^[^\.].*'
-  when: processed.stat.exists and yumrepo_finish
+  when: >
+    yumrepo_manage and
+    processed.stat.exists and
+    yumrepo_finish
   notify:
     - Delete unmanaged repos
+
+- name: Test if there is some unmanaged repo
+  shell: >
+    [ $(md5sum /etc/yum.repos.d/.managed | cut -f1 -d' ') == $(ls -1 *.repo | md5sum | cut -f1 -d' ') ] && true || false
+  register: repos_changed
+  args:
+    chdir: /etc/yum.repos.d
+    executable: /bin/bash
+  failed_when: False
+  changed_when: repos_changed.rc
+  notify:
+    - Delete unmanaged repos
+  when: >
+    yumrepo_manage and
+    yumrepo_finish
 
 - name: Delete the fragment directory
   shell: rm -fr "/tmp/ansible.yumrepo.{{ yumrepo_unique }}x"
   changed_when: False
-  when: yumrepo_finish
+  when: >
+    yumrepo_manage and
+    yumrepo_finish

@@ -1,5 +1,10 @@
 ---
 
+# If set to true, the management mode is enabled. That means that all unmanaged
+# repos will be deleted). The best is to set it somewhere in a gobal variable
+# file shared in all plays of the playbook.
+yumrepo_manage: false
+
 # Repository configuration
 yumrepo_repos: {}
 # Example

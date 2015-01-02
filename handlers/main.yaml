@@ -10,4 +10,6 @@
     chdir: /etc/yum.repos.d
     executable: /bin/bash
   changed_when: False
-  when: yumrepo_finish
+  when: >
+    yumrepo_manage and
+    yumrepo_finish

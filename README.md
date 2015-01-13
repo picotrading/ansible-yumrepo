@@ -46,10 +46,10 @@ galaxy_info:
 dependencies:
   - role: yumrepo
     yumrepo_repos:
-      - myrepo2:
-          name: My repo 3
-          baseurl: http://myserver
-          gpgcheck: 0
+      myrepo2:
+        name: My repo 3
+        baseurl: http://myserver
+        gpgcheck: 0
 ```
 
 The role also supports *managed mode* which removes any repo which is not managed

@@ -90,7 +90,7 @@
     yumrepo_finish
 
 - name: Delete the fragment directory
-  shell: rm -fr "/tmp/ansible.yumrepo.{{ yumrepo_unique }}x"
+  shell: rm -fr "/tmp/ansible.yumrepo.{{ yumrepo_unique }}"
   changed_when: False
   when: >
     yumrepo_manage and

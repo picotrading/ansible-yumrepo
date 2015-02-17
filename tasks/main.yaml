@@ -13,6 +13,7 @@
   template:
     src: yum_repo.j2
     dest: /etc/yum.repos.d/{{ item.key }}.repo
+  register: repo_file
   with_dict: yumrepo_repos
   when: yumrepo_repos.keys() | length > 0
   notify:
@@ -95,3 +96,8 @@
   when: >
     yumrepo_manage and
     yumrepo_finish
+
+- name: Clean yum cache
+  shell: yum clean all
+  changed_when: False
+  when: repo_file and repo_file.changed

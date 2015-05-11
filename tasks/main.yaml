@@ -19,6 +19,11 @@
   notify:
     - Delete unmanaged repos
 
+- name: Import GPG key if specified
+  rpm_key: state=present key={{ item.value.gpgkey }}
+  when: item.value.gpgkey is defined
+  with_dict: yumrepo_repos
+
 - name: Create temporal directory
   file:
     path: /tmp/ansible.yumrepo.{{ yumrepo_unique }}

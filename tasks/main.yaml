@@ -22,7 +22,10 @@
 - name: Import GPG key if specified
   rpm_key:
     state: present
-    key: "{{ item.value.gpgkey }}"
+    key: "{{ item.value.gpgkey |
+      replace('$releasever', ansible_distribution_major_version) |
+      replace('$arch', ansible_architecture) |
+      replace('$basearch', ansible_architecture) }}"
   with_dict: yumrepo_repos
   when: >
     item.value.gpgkey is defined and

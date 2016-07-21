@@ -12,9 +12,9 @@
 - name: Configure additional repos in /etc/yum.repos.d/
   template:
     src: yum_repo.j2
-    dest: /etc/yum.repos.d/{{ item.key }}.repo
+    dest: /etc/yum.repos.d/"{{ item.key }}".repo
   register: repo_file
-  with_dict: yumrepo_repos
+  with_dict: "{{ yumrepo_repos }}"
   when: yumrepo_repos.keys() | length > 0
   notify:
     - Delete unmanaged repos
@@ -26,14 +26,14 @@
       replace('$releasever', ansible_distribution_major_version) |
       replace('$arch', ansible_architecture) |
       replace('$basearch', ansible_architecture) }}"
-  with_dict: yumrepo_repos
+  with_dict: "{{ yumrepo_repos }}"
   when: >
     item.value.gpgkey is defined and
     item.value.gpgcheck == 1
 
 - name: Create temporal directory
   file:
-    path: /tmp/ansible.yumrepo.{{ yumrepo_unique }}
+    path: /tmp/ansible.yumrepo."{{ yumrepo_unique }}"
     state: directory
   changed_when: False
   when: yumrepo_manage
@@ -41,10 +41,10 @@
 - name: Create fragments for repos to be ignored
   lineinfile:
     line: "{{ item }}"
-    dest: /tmp/ansible.yumrepo.{{ yumrepo_unique }}/{{ item }}
+    dest: /tmp/ansible.yumrepo."{{ yumrepo_unique }}"/"{{ item }}"
     create: yes
     state: present
-  with_items: yumrepo_ignore_repos
+  with_items: "{{ yumrepo_ignore_repos }}"
   changed_when: False
   when: >
     yumrepo_manage and
@@ -52,18 +52,18 @@
 
 - name: Create fragment files
   lineinfile:
-    line: "{{ item.key }}.repo"
-    dest: /tmp/ansible.yumrepo.{{ yumrepo_unique }}/{{ item.key }}
+    line: "'{{ item.key }}'.repo"
+    dest: /tmp/ansible.yumrepo."{{ yumrepo_unique }}"/"{{ item.key }}"
     create: yes
     state: present
-  with_dict: yumrepo_repos
+  with_dict: "{{ yumrepo_repos }}"
   changed_when: False
   when: >
     yumrepo_manage and
     yumrepo_repos.keys() | length > 0
 
 - name: Touch the .processed file
-  shell: touch /tmp/ansible.yumrepo.{{ yumrepo_unique }}/.processed
+  shell: touch /tmp/ansible.yumrepo."{{ yumrepo_unique }}"/.processed
   changed_when: False
   when: >
     yumrepo_manage and
@@ -71,13 +71,13 @@
 
 - name: Check if the the .processed file exists
   stat:
-    path: /tmp/ansible.yumrepo.{{ yumrepo_unique }}/.processed
+    path: /tmp/ansible.yumrepo."{{ yumrepo_unique }}"/.processed
   register: processed
   when: yumrepo_manage
 
 - name: Create managed file
   assemble:
-    src: /tmp/ansible.yumrepo.{{ yumrepo_unique }}
+    src: /tmp/ansible.yumrepo."{{ yumrepo_unique }}"
     dest: /etc/yum.repos.d/.managed
     regexp: '^[^\.].*'
   when: >
@@ -103,7 +103,7 @@
     yumrepo_finish
 
 - name: Delete the fragment directory
-  shell: rm -fr "/tmp/ansible.yumrepo.{{ yumrepo_unique }}"
+  shell: "rm -fr /tmp/ansible.yumrepo.'{{ yumrepo_unique }}'"
   changed_when: False
   when: >
     yumrepo_manage and
